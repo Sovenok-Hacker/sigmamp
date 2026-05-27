@@ -1,6 +1,6 @@
 use std::{
     cmp::Ordering,
-    ops::{AddAssign, SubAssign},
+    ops::{Add, AddAssign, Sub, SubAssign},
 };
 
 #[cfg(target_pointer_width = "64")]
@@ -133,6 +133,24 @@ impl SubAssign<&SigmaUInt> for SigmaUInt {
 // impl Mul<&SigmaUInt> for &SigmaUInt {
 //     fn mul(self, rhs: &SigmaUInt) -> Self::Output {}
 // }
+
+impl Add for SigmaUInt {
+    type Output = SigmaUInt;
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut r = self;
+        r += &rhs;
+        r
+    }
+}
+
+impl Sub for SigmaUInt {
+    type Output = SigmaUInt;
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut r = self;
+        r -= &rhs;
+        r
+    }
+}
 
 impl PartialEq for SigmaUInt {
     fn eq(&self, other: &Self) -> bool {
