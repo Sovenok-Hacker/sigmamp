@@ -5,9 +5,13 @@ use std::{
 
 #[cfg(target_pointer_width = "64")]
 pub type Limb = u64;
+#[cfg(target_pointer_width = "64")]
+pub type DoubleLimb = u128;
 
 #[cfg(target_pointer_width = "32")]
 pub type Limb = u32;
+#[cfg(target_pointer_width = "32")]
+pub type DoubleLimb = u64;
 
 /// Arbirary large unsigned integer
 #[derive(Debug, Eq, Clone)]
@@ -16,6 +20,27 @@ pub struct SigmaUInt {
     // Starts from the least significant limb
     // If it has trailing zeros the universe will likely collapse :)
     limbs: Vec<Limb>,
+}
+
+pub fn multiply_naive(a: &SigmaUInt, b: &SigmaUInt) -> SigmaUInt {
+    let mut r: Vec<Limb> = vec![0; a.limbs.len() + b.limbs.len()];
+
+    for i in 0..a.limbs.len() {
+        let mut carry: DoubleLimb = 0;
+
+        for j in 0..b.limbs.len() {
+            let t = r[i + j] as DoubleLimb
+                + (a.limbs[i] as DoubleLimb) * (b.limbs[j] as DoubleLimb)
+                + carry; // Current auxilary result
+
+            r[i + j] = t as Limb; // Put the least half into i+j's limb
+            carry = t >> Limb::BITS; // Carry is ... well, the part that doesn't fit
+        }
+
+        r[i + b.limbs.len()] = carry as Limb;
+    }
+
+    SigmaUInt::from_limbs(r)
 }
 
 impl SigmaUInt {
@@ -129,10 +154,6 @@ impl SubAssign<&SigmaUInt> for SigmaUInt {
         }
     }
 }
-
-// impl Mul<&SigmaUInt> for &SigmaUInt {
-//     fn mul(self, rhs: &SigmaUInt) -> Self::Output {}
-// }
 
 impl Add for SigmaUInt {
     type Output = SigmaUInt;

@@ -1,4 +1,4 @@
-use sigmamp::{Limb, SigmaUInt};
+use sigmamp::{Limb, SigmaUInt, multiply_naive};
 
 #[test]
 fn add_test() {
@@ -177,4 +177,75 @@ fn sub_varying_length_borrow_test() {
 
     // Result should be [MAX]
     assert_eq!(a, SigmaUInt::from_limbs(vec![Limb::MAX]));
+}
+
+#[test]
+fn test_mul_naive_max_limbs() {
+    let a = SigmaUInt::from_limbs(vec![Limb::MAX]);
+    let b = SigmaUInt::from_limbs(vec![Limb::MAX]);
+
+    let c = multiply_naive(&a, &b);
+
+    // Expected: [1, MAX - 1] -> representing 1 + (MAX - 1)*B
+    let expected = vec![1, Limb::MAX - 1];
+    assert_eq!(
+        c.to_limbs(),
+        expected,
+        "MAX * MAX split or carry calculation failed"
+    );
+}
+
+#[test]
+fn test_mul_naive_zero_and_one() {
+    let a = SigmaUInt::from_limbs(vec![1, 2, 3, 4]);
+    let zero = SigmaUInt::from_limbs(vec![]); // Your canonical zero
+    let one = SigmaUInt::from_limbs(vec![1]);
+
+    // Any number * 0 = 0
+    let mul_zero = multiply_naive(&a, &zero);
+    assert!(
+        mul_zero.to_limbs().is_empty(),
+        "Multiplying by zero must return an empty vector"
+    );
+
+    // Any number * 1 = self
+    let mul_one = multiply_naive(&a, &one);
+    assert_eq!(
+        mul_one.to_limbs(),
+        vec![1, 2, 3, 4],
+        "Multiplying by one changed the value"
+    );
+}
+
+#[test]
+fn test_mul_naive_deep_carry() {
+    // a = [0, 0, 1] -> B^2
+    let a = SigmaUInt::from_limbs(vec![0, 0, 1]);
+    // b = [2] -> 2
+    let b = SigmaUInt::from_limbs(vec![2]);
+
+    let c = multiply_naive(&a, &b);
+
+    // Expected: [0, 0, 2] -> 2 * B^2
+    assert_eq!(
+        c.to_limbs(),
+        vec![0, 0, 2],
+        "Carry shifting failed to respect zero positions"
+    );
+}
+
+#[test]
+fn test_mul_naive_squaring() {
+    // a = [1, 1] -> 1 + B
+    let a = SigmaUInt::from_limbs(vec![1, 1]);
+
+    let c = multiply_naive(&a, &a);
+
+    // (1 + B)^2 = 1 + 2B + B^2
+    // Expected layout: [1, 2, 1]
+    assert_eq!(
+        c.to_limbs(),
+        vec![1, 2, 1],
+        "Polynomial expansion accumulation failed"
+    );
 }
