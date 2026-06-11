@@ -1,6 +1,6 @@
 use std::{
     cmp::Ordering,
-    ops::{Add, AddAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Mul, Sub, SubAssign},
 };
 
 #[cfg(target_pointer_width = "64")]
@@ -170,6 +170,13 @@ impl Sub for SigmaUInt {
         let mut r = self;
         r -= &rhs;
         r
+    }
+}
+
+impl Mul for SigmaUInt {
+    type Output = SigmaUInt;
+    fn mul(self, rhs: Self) -> Self::Output {
+        multiply_naive(&self, &rhs)
     }
 }
 
